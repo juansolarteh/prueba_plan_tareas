@@ -97,7 +97,6 @@ public class ScheduleTaskService implements ScheduleTaskPort {
         Date current = start;
         List<TaskDTO> tasksDTO = new ArrayList<>();
         for (Task t : plan) {
-            System.out.println(current);
             Date end = new Date(current.getTime() + t.getEstimated_minutes() * 60 * 1000);
             tasksDTO.add(new TaskDTO(current.toString(), end.toString(), t));
             current = end;
