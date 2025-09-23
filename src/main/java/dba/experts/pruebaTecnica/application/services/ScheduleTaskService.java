@@ -22,23 +22,17 @@ public class ScheduleTaskService implements ScheduleTaskPort {
                 .collect(Collectors.toMap(Task::getId, t -> t));
 
         Map<String, Integer> indegree = new HashMap<>();
-        Map<String, List<String>> adj = new HashMap<>();
+        Map<String, List<String>> dependencies = new HashMap<>();
         Map<String, Integer> categoryTime = new HashMap<>();
         Map<Integer, Integer> priorityCount = new HashMap<>();
         for (Task t : tasks) {
             indegree.put(t.getId(), t.getDependencies().size());
             for (String dep : t.getDependencies()) {
-                adj.computeIfAbsent(dep, k -> new ArrayList<>()).add(t.getId());
+                dependencies.computeIfAbsent(dep, k -> new ArrayList<>()).add(t.getId());
             }
         }
 
-        PriorityQueue<Task> available = new PriorityQueue<>((t1, t2) -> {
-            int cmp = t1.getDeadline().compareTo(t2.getDeadline());
-            if (cmp != 0) return cmp;
-            cmp = Integer.compare(t2.getPriority(), t1.getPriority());
-            if (cmp != 0) return cmp;
-            return Integer.compare(t1.getEstimated_minutes(), t2.getEstimated_minutes());
-        });
+        PriorityQueue<Task> available = new PriorityQueue<>(new TaskComparator());
 
         for (Task t : tasks) {
             if (indegree.get(t.getId()) == 0) available.add(t);
@@ -64,7 +58,7 @@ public class ScheduleTaskService implements ScheduleTaskPort {
                 backlog.add(t);
             }
 
-            for (String dep : adj.getOrDefault(t.getId(), Collections.emptyList())) {
+            for (String dep : dependencies.getOrDefault(t.getId(), Collections.emptyList())) {
                 indegree.put(dep, indegree.get(dep) - 1);
                 if (indegree.get(dep) == 0) {
                     available.add(taskMap.get(dep));
